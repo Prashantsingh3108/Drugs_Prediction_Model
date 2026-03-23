@@ -1,21 +1,29 @@
 import streamlit as st
 import numpy as np
-import pandas as pd
 import pickle
+import os
 
 # -------------------------------
-# Load Model
-# -------------------------------
-model = pickle.load(open("model.pkl", "rb"))
-
-# -------------------------------
-# Page Config
+# Page Config (MUST be first)
 # -------------------------------
 st.set_page_config(page_title="💊 Drug Prediction App", layout="centered")
 
+# -------------------------------
+# Load Model (FIXED PATH)
+# -------------------------------
+model_path = os.path.join(os.path.dirname(__file__), "model.pkl")
+
+try:
+    model = pickle.load(open(model_path, "rb"))
+except:
+    st.error("❌ Model file not found. Please check 'model.pkl'")
+    st.stop()
+
+# -------------------------------
+# UI Design
+# -------------------------------
 st.title("💊 Drug Classification System")
 st.markdown("### Predict the suitable drug based on patient details")
-
 st.write("---")
 
 # -------------------------------
@@ -29,7 +37,7 @@ chol = st.selectbox("Cholesterol", ["NORMAL", "HIGH"])
 na_to_k = st.slider("Na_to_K Ratio", 5.0, 40.0, 15.0)
 
 # -------------------------------
-# Encoding (IMPORTANT)
+# Encoding (MUST MATCH TRAINING)
 # -------------------------------
 sex = 1 if sex == "Male" else 0
 
@@ -40,15 +48,18 @@ bp = bp_map[bp]
 chol = chol_map[chol]
 
 # -------------------------------
-# Prediction Button
+# Prediction
 # -------------------------------
 if st.button("🔍 Predict Drug"):
 
-    input_data = np.array([[age, sex, bp, chol, na_to_k]])
+    try:
+        input_data = np.array([[age, sex, bp, chol, na_to_k]])
+        prediction = model.predict(input_data)[0]
 
-    prediction = model.predict(input_data)[0]
+        st.success(f"✅ Predicted Drug: **{prediction}**")
 
-    st.success(f"✅ Predicted Drug: **{prediction}**")
+    except Exception as e:
+        st.error(f"❌ Prediction Error: {e}")
 
 # -------------------------------
 # Footer
